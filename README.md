@@ -1,2 +1,2 @@
 # orakolo
-Some algoritms code reference
+Some algorithms code reference
