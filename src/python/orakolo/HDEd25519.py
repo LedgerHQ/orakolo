@@ -141,6 +141,60 @@ class BIP32Ed25519:
         trace("LEAVE root_key_slip10")
         return ((kL, kR), A, c)
 
+    def public_child_key_not_hardened(self, node, i):
+        """
+        INPUT:
+          A      : 32 bytes public key (y coordinatte only)
+          c      : 32 bytes chain code
+          i      : child index to compute (must not be hardened < 0x80000000)
+
+        OUTPUT:
+          A_i        : 32 bytes ith-child public key, A_i = kR_i.G (y coordinatte only)
+          c_i        : 32 bytes ith-child chain code
+
+        PROCESS:
+          1. encode i 4-bytes little endian, il = encode_U32LE(i)
+          2. if i is more than 2^31 this means it's a hardened path and it's no supported so None is returned
+               - compute Z   = HMAC-SHA512(key=c, Data=0x02 | A | il )
+               - compute c_  = HMAC-SHA512(key=c, Data=0x03 | A | il )
+          3. ci = lowest_32bytes(c_)
+          4. set ZL = highest_28bytes(Z)
+          5. compute Ai
+                Ai = A + ZL * 8 * G
+          6. return Ai, c
+        """
+
+        trace("ENTER private_child_key")
+        if not node:
+            return None
+        # unpack argument
+        (AP, cP) = node
+
+        assert 0 <= i < 2 ** 32
+
+        trace("private_child_key/AP      : %s" % binascii.hexlify(AP))
+        trace("private_child_key/cP      : %s" % binascii.hexlify(cP))
+        trace("private_child_key/i       : %.04x" % i)
+
+        # compute Z,c
+
+        if i > 2 ** 31: #We only do none hardened paths
+            return None
+
+        i_bytes = i.to_bytes(4, 'little')
+
+        # regular child
+        trace("regular Z input           : %s" % binascii.hexlify(b'\x02' + AP + i_bytes))
+        Z = _Fk(b'\x02' + AP + i_bytes, cP)
+        trace("regular c input           : %s" % binascii.hexlify(b'\x03' + AP + i_bytes))
+        c = _Fk(b'\x03' + AP + i_bytes, cP)[32:]
+
+        cv25519 = Curve.get_curve("Ed25519")
+        P = int.from_bytes(Z[:28], 'little') * 8 * cv25519.generator + cv25519.decode_point(AP)
+        A = cv25519.encode_point(P)
+
+        return (A, c)
+
     def private_child_key(self, node, i):
         """
         INPUT: 
@@ -315,15 +369,37 @@ class BIP32Ed25519:
         return self.derive_seed(path, seed)
 
 if __name__ == "__main__":
-    for path in ("42'/1/2", "42'/3'/5"):
+
+    bip32ed25519 = BIP32Ed25519()
+
+    for path in (u"42'/1/2", u"42'/3'/5"):
         print("*************************************")
         print("CHAIN: %s"%path)
         print()
-        node = derive_mnemonic(u'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about', path)
+        node = bip32ed25519.derive_mnemonic(path, u'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about')
         ((kL, kR), A, c) = node
         print("  kL:%s" % binascii.hexlify(kL))
         print("  kR:%s" % binascii.hexlify(kR))
         print("   c:%s" % binascii.hexlify(c))
+        print("   A:%s" % binascii.hexlify(A))
         print()
         print()
 
+    for path in ((u"42'", u"1/2"), (u"42'/3'", u"5")):
+        print("*************************************")
+        print()
+        node = bip32ed25519.derive_mnemonic(path[0], u'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about')
+        ((kL, kR), A, c) = node
+
+        node = (A, c)
+
+        for i in path[1].split('/'):
+            i = int(i)
+            node = bip32ed25519.public_child_key_not_hardened(node, i)
+
+            (A, c) = node
+
+            print("   c:%s" % binascii.hexlify(c))
+            print("   A:%s" % binascii.hexlify(A))
+            print()
+            print()
