@@ -9,12 +9,15 @@ import unicodedata
 """
  OS CALL:
 
-    void           os_perso_derive_node_bip32_seed_key(unsigned int mode,
-                                                       cx_curve_t curve,
-                                                       const unsigned int* path, unsigned int pathLength,
-                                                       unsigned char *privateKey,
-                                                       unsigned char* chain ,
-                                                       unsigned char* seed_key, unsigned int seed_key_length);
+    void os_perso_derive_node_bip32_seed_key(
+        unsigned int mode,
+        cx_curve_t curve,
+        const unsigned int* path,
+        unsigned int pathLength,
+        unsigned char *privateKey,
+        unsigned char* chain,
+        unsigned char* seed_key,
+        unsigned int seed_key_length);
 
     input:
       mode            = 0
@@ -37,10 +40,10 @@ import unicodedata
 
 OS/Python Equivalence:
     OS:
-       privateKey, chain <-          os_perso_derive_node_bip32(            CX_CURVE_Ed25519, path, path_len, privateKey, chain);
+       privateKey, chain <- os_perso_derive_node_bip32(CX_CURVE_Ed25519, path, path_len, privateKey, chain);
        privateKey, chain <- os_perso_derive_node_bip32_seed_key(HDW_NORMAL, CX_CURVE_Ed25519, path, path_len, privateKey, chain, seed, seed_length);
     Python:
-       privateKey, public_key, chain <-BIP32Ed25519.derive_seed(                              path,                              seed)
+       privateKey, public_key, chain <-BIP32Ed25519.derive_seed(path, seed)
 
 
     where seed is the BIP39/pbkdf2 mnemonic derivation
