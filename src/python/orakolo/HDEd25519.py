@@ -390,6 +390,7 @@ class BIP32Ed25519:
 
         ENTER("mnemonic_to_seed")
         seed = hashlib.pbkdf2_hmac('sha512', _NFKDbytes(mnemonic), _NFKDbytes(prefix+passphrase), 2048)
+        trace("seed: %s" % binascii.hexlify(seed))
         LEAVE("mnemonic_to_seed")
         return seed
 
