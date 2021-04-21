@@ -108,7 +108,7 @@ class BIP32Ed25519:
           k = (kL,kR), c
 
         PROCESS:
-          1. compute c = HMAC-SHA256(key=seedkey,0x01 || Data = S)
+          1. compute c = HMAC-SHA256(key=seedkey, Data=0x01 | S)
           2. compute I = HMAC-SHA512(key=seedkey, Data=S)
           3. split I = into tow sequence of 32-bytes sequence kL,Kr
           4. if the third highest bit of the last byte ok kL is not zero:
