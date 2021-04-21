@@ -9,12 +9,15 @@ import unicodedata
 """
  OS CALL:
 
-    void           os_perso_derive_node_bip32_seed_key(unsigned int mode,
-                                                       cx_curve_t curve,
-                                                       const unsigned int* path, unsigned int pathLength,
-                                                       unsigned char *privateKey,
-                                                       unsigned char* chain ,
-                                                       unsigned char* seed_key, unsigned int seed_key_length);
+    void os_perso_derive_node_bip32_seed_key(
+        unsigned int mode,
+        cx_curve_t curve,
+        const unsigned int* path,
+        unsigned int pathLength,
+        unsigned char *privateKey,
+        unsigned char* chain,
+        unsigned char* seed_key,
+        unsigned int seed_key_length);
 
     input:
       mode            = 0
@@ -37,10 +40,10 @@ import unicodedata
 
 OS/Python Equivalence:
     OS:
-       privateKey, chain <-          os_perso_derive_node_bip32(            CX_CURVE_Ed25519, path, path_len, privateKey, chain);
+       privateKey, chain <- os_perso_derive_node_bip32(CX_CURVE_Ed25519, path, path_len, privateKey, chain);
        privateKey, chain <- os_perso_derive_node_bip32_seed_key(HDW_NORMAL, CX_CURVE_Ed25519, path, path_len, privateKey, chain, seed, seed_length);
     Python:
-       privateKey, public_key, chain <-BIP32Ed25519.derive_seed(                              path,                              seed)
+       privateKey, public_key, chain <-BIP32Ed25519.derive_seed(path, seed)
 
 
     where seed is the BIP39/pbkdf2 mnemonic derivation
@@ -108,7 +111,7 @@ class BIP32Ed25519:
           k = (kL,kR), c
 
         PROCESS:
-          1. compute c = HMAC-SHA256(key=seedkey,0x01 || Data = S)
+          1. compute c = HMAC-SHA256(key=seedkey, Data=0x01 | S)
           2. compute I = HMAC-SHA512(key=seedkey, Data=S)
           3. split I = into tow sequence of 32-bytes sequence kL,Kr
           4. if the third highest bit of the last byte ok kL is not zero:
@@ -390,6 +393,7 @@ class BIP32Ed25519:
 
         ENTER("mnemonic_to_seed")
         seed = hashlib.pbkdf2_hmac('sha512', _NFKDbytes(mnemonic), _NFKDbytes(prefix+passphrase), 2048)
+        trace("seed: %s" % binascii.hexlify(seed))
         LEAVE("mnemonic_to_seed")
         return seed
 
